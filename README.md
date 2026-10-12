@@ -147,14 +147,25 @@ This dataset includes:
 
 ## 📝 Citation
 
-DynaPIN is currently under peer review. If you use DynaPIN in your research, please cite our upcoming paper:
+If you use DynaPIN in your research, please cite:
+
+Barlas, A. B., Özsan, A., Prévost, C., Sacquin-Mora, S., & Karaca, E. (2026).
+**DynaPIN: A Tool for Characterizing Dynamic Protein Interfaces.**
+*Journal of Molecular Biology*, **438**, 169942.
+https://doi.org/10.1016/j.jmb.2026.169942
+
+### BibTeX
 
 ```bibtex
 @article{barlas_dynapin_2026,
-  title={DynaPIN: A tool for characterizing dynamic protein interfaces},
-  author={Barlas, Ayşe Berçin and Özsan, Atakan and Prévost, Chantal and Sacquin-Mora, Sophie and Karaca, Ezgi},
-  journal={Under Review},
-  year={2026}
+  title   = {{DynaPIN}: A Tool for Characterizing Dynamic Protein Interfaces},
+  author  = {Barlas, Ayşe Berçin and Özsan, Atakan and Prévost, Chantal and Sacquin-Mora, Sophie and Karaca, Ezgi},
+  journal = {Journal of Molecular Biology},
+  volume  = {438},
+  pages   = {169942},
+  year    = {2026},
+  doi     = {10.1016/j.jmb.2026.169942},
+  url     = {https://doi.org/10.1016/j.jmb.2026.169942}
 }
 ```
 
