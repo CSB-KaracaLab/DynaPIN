@@ -62,7 +62,7 @@ DynaPIN utilizes a unified **Conda** environment to manage Python dependencies a
 
 ### 1. Clone the Repository
 ```bash
-git clone https://github.com/aysebercin/DynaPIN.git
+git clone https://github.com/CSB-KaracaLab/DynaPIN.git
 cd DynaPIN
 ```
 ### 2. Create the Environment
