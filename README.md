@@ -13,6 +13,8 @@
 
 # DynaPIN: Analysis of Dynamic Protein INterfaces
 
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/CSB-KaracaLab/DynaPIN/blob/main/DynaPIN_Colab.ipynb)
+
 ![Version](https://img.shields.io/badge/version-1.0.0-blue?style=flat-square)
 ![Python](https://img.shields.io/badge/python-3.10%2B-blue?style=flat-square)
 ![License](https://img.shields.io/badge/license-Apache%202.0-green?style=flat-square)
@@ -68,6 +70,18 @@ The `dynapin` Conda environment automatically installs all core libraries. Howev
 2. When executing DynaPIN, pass the path to this executable using the `--foldx_path` argument.
 
 > **Note:** FoldX is entirely optional. If you do not provide the `--foldx_path` argument, DynaPIN will still run perfectly, but it will automatically bypass the energy calculation module.
+
+## ▶️ Try it in Colab
+
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/CSB-KaracaLab/DynaPIN/blob/main/DynaPIN_Colab.ipynb)
+
+`DynaPIN_Colab.ipynb` installs DynaPIN and its binaries for you and runs the whole pipeline
+on a two-chain complex over 21 frames of molecular dynamics — the quality control, the
+interaction network and the per-residue motion — then reads the tables back and shows what
+a dynamic interface fingerprint looks like. No conda, nothing to install locally.
+
+FoldX is the one module it leaves out: its licence is academic and the binary has to be
+fetched by hand.
 
 ## 📦 Installation
 

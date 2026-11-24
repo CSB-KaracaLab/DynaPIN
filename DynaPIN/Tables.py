@@ -1,5 +1,7 @@
 import os
 import re
+import sys
+from pathlib import Path
 import MDAnalysis
 import freesasa
 import MDAnalysis as mda
@@ -286,6 +288,29 @@ class dynapin:
 
 
     @staticmethod
+    def _executable(name, comes_from):
+        """Where a console script is, even when PATH does not know.
+
+        DynaPIN is often started by a path rather than from an activated environment - a
+        venv's bin directory, a notebook kernel, a scheduler - and a process spawned from
+        there cannot see the console scripts installed beside the interpreter. So look
+        next to the running interpreter first, then fall back to PATH.
+        """
+        beside = Path(sys.executable).parent / name
+        if beside.is_file():
+            return str(beside)
+        found = shutil.which(name)
+        if found:
+            return found
+        raise RuntimeError(
+            f"{name} was not found. It ships with {comes_from}: "
+            f"`pip install {comes_from}` into the same environment as DynaPIN.")
+
+    @staticmethod
+    def _pdb_splitmodel():
+        return dynapin._executable("pdb_splitmodel", "pdb-tools")
+
+    @staticmethod
     def _split_models(file, job_path):
 
         """ Creates folder 'models' and splits the trajectory into the models folder.
@@ -294,14 +319,24 @@ class dynapin:
         file -- trajectory file
         Return: None
         """
-        now = os.getcwd()
         file_path = os.path.abspath(file)
         models_path = os.path.join(job_path, 'models')
-        if not os.path.exists(models_path):
-            os.mkdir(models_path)
-        os.chdir(models_path)
-        os.system(f"pdb_splitmodel {file_path}")
-        os.chdir(now)
+        os.makedirs(models_path, exist_ok=True)
+
+        # run it in models/ through cwd rather than chdir, which would leave the process
+        # in the wrong directory if anything below raised
+        result = subprocess.run([dynapin._pdb_splitmodel(), file_path], cwd=models_path,
+                                stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                                text=True)
+        produced = [f for f in os.listdir(models_path) if f.lower().endswith(".pdb")]
+        if result.returncode != 0 or not produced:
+            # this used to pass unnoticed: os.system's return code was ignored, so
+            # models/ stayed empty and every CAPRI metric then quietly vanished from the
+            # quality-control table behind a "expected for monomer systems" note
+            raise RuntimeError(
+                f"Splitting {file_path} into per-frame models produced nothing "
+                f"(pdb_splitmodel exited {result.returncode}). "
+                f"{result.stdout.strip()[:300]}")
 
     def _prepare_models(self, pdb_path, job_path):
         """Populate models folder from the final pdb (after chain selection/standardization).
@@ -688,7 +723,7 @@ class dynapin:
             rows = [] 
 
             proc = subprocess.Popen(
-                ["DockQ", native, native, "--short"],
+                [dynapin._executable("DockQ", "DockQ"), native, native, "--short"],
                 stdout=subprocess.PIPE,
                 stderr=subprocess.STDOUT,
                 text=True,
@@ -717,7 +752,7 @@ class dynapin:
             for fname, frame in pdbs[1:]:
                 mobile = os.path.join(models_dir, fname)
                 proc = subprocess.Popen(
-                    ["DockQ", mobile, native, "--short"],
+                    [dynapin._executable("DockQ", "DockQ"), mobile, native, "--short"],
                     stdout=subprocess.PIPE,
                     stderr=subprocess.STDOUT,
                     text=True,
@@ -923,11 +958,8 @@ class dynapin:
             with tempfile.TemporaryDirectory() as output_path:
                 try:
                     if not os.path.exists(models_path):
-                        os.mkdir(models_path)
-                        os.chdir(models_path)
-                        os.system(f"pdb_splitmodel {inp_path}")
-                    else:
-                        os.chdir(models_path)
+                        dynapin._split_models(inp_path, job_path)
+                    os.chdir(models_path)
 
                     for i in os.listdir(models_path):
                         if i.split('.')[-1] == 'pdb' and "foldx" not in i:
