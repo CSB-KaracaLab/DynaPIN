@@ -1,12 +1,12 @@
 <p align="center">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="assets/logo-wordmark-dark.png">
-    <img src="assets/logo-wordmark.png" alt="DynaPIN — dynamic protein interfaces" width="560">
+    <source media="(prefers-color-scheme: dark)" srcset="docs/assets/logo-wordmark-dark.png">
+    <img src="docs/assets/logo-wordmark.png" alt="DynaPIN — dynamic protein interfaces" width="560">
   </picture>
 </p>
 
 <p align="center">
-  <img src="assets/interface-loop.gif" width="380"
+  <img src="docs/assets/interface-loop.gif" width="380"
        alt="A protein dimer over 1.6 ns of molecular dynamics: contacts that hold throughout
             stay blue and olive, contacts that open and close flicker orange.">
 </p>

@@ -1,0 +1,371 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>DynaPIN · Analysis of Dynamic Protein INterfaces</title>
+<meta name="description" content="DynaPIN turns an MD trajectory or a structure ensemble into a dynamic interface fingerprint: quality control, residue properties and interaction networks, in one command.">
+<meta name="author" content="KaracaLab, Izmir Biomedicine and Genome Center">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#F7F8FA" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0E1420" media="(prefers-color-scheme: dark)">
+<link rel="canonical" href="https://csb-karacalab.github.io/DynaPIN/">
+<meta property="og:url" content="https://csb-karacalab.github.io/DynaPIN/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="KaracaLab">
+<meta property="og:title" content="DynaPIN · Analysis of Dynamic Protein INterfaces">
+<meta property="og:description" content="Quality control, residue properties and interaction networks from an MD trajectory, in one command.">
+<meta property="og:image" content="https://csb-karacalab.github.io/DynaPIN/assets/logo-wordmark.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* The lab site's tokens, unchanged, so this page reads as part of it.
+   --c1/--c3/--c4 mark the three analysis modules, nothing else. */
+:root{
+  --paper:#F7F8FA; --surface:#FFFFFF; --ink:#16233A; --ink-2:#55627A; --line:#E1E5EC;
+  --navy:#1F3A6E;
+  --tint-1:#FBF0F1; --tint-3:#EBF0F8; --tint-4:#EDF4E8;
+  --c1:#B03A57; --c2:#896610; --c3:#2F5FA8; --c4:#497634;
+  --code-bg:#F1F3F7;
+  --sans:"IBM Plex Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono:"IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  --maxw:1100px;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper:#0E1420; --surface:#141C2B; --ink:#E9EDF4; --ink-2:#9DA8BB; --line:#253045;
+    --navy:#9DB8F0;
+    --tint-1:#221A22; --tint-3:#172133; --tint-4:#18221A;
+    --c1:#F08AA6; --c2:#E2C26A; --c3:#8FB2F2; --c4:#9CCB84;
+    --code-bg:#0B1120;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#0E1420; --surface:#141C2B; --ink:#E9EDF4; --ink-2:#9DA8BB; --line:#253045;
+  --navy:#9DB8F0; --tint-1:#221A22; --tint-3:#172133; --tint-4:#18221A;
+  --c1:#F08AA6; --c2:#E2C26A; --c3:#8FB2F2; --c4:#9CCB84; --code-bg:#0B1120; color-scheme:dark;
+}
+
+*,*::before,*::after{box-sizing:border-box}
+html{font-size:clamp(16px, calc(10px + .4vw), 19px);scroll-behavior:smooth;scroll-padding-top:76px}
+@media (prefers-reduced-motion: reduce){html{scroll-behavior:auto}}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);
+     font-size:1.02rem;line-height:1.65;-webkit-font-smoothing:antialiased}
+.wrap{max-width:var(--maxw);margin:0 auto;padding:0 max(18px,4vw)}
+a{color:inherit;text-decoration-color:color-mix(in srgb,currentColor 35%,transparent);
+  text-underline-offset:3px;text-decoration-thickness:1px;transition:color .15s,text-decoration-color .15s}
+a:hover{color:var(--navy);text-decoration-color:currentColor}
+a:focus-visible,button:focus-visible{outline:2px solid var(--navy);outline-offset:3px;border-radius:3px}
+h1,h2,h3{font-weight:500;letter-spacing:-.012em;margin:0;text-wrap:balance}
+h2{font-size:1.5rem;margin-bottom:.35rem}
+h3{font-size:1.02rem}
+p{margin:0;text-wrap:pretty}
+.label{font-size:.74rem;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-2)}
+.skip{position:absolute;left:-9999px}
+.skip:focus{left:12px;top:12px;background:var(--surface);padding:.5rem .8rem;border-radius:6px;z-index:20}
+
+header{position:sticky;top:0;z-index:9;background:color-mix(in srgb,var(--paper) 90%,transparent);
+       backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+.nav{display:flex;align-items:center;justify-content:space-between;gap:1.2rem;min-height:58px}
+.brand{display:inline-flex;align-items:center;gap:.5rem;font-size:1.1rem;font-weight:600;
+       text-decoration:none;white-space:nowrap}
+.brand .mark{width:1.6rem;height:1.6rem;flex:none}
+.brand .lab{color:var(--ink-2);font-weight:500}
+nav ul{list-style:none;margin:0;padding:0;display:flex;gap:.1rem;overflow-x:auto;scrollbar-width:none}
+nav ul::-webkit-scrollbar{display:none}
+nav a{display:block;font-size:.88rem;font-weight:500;text-decoration:none;white-space:nowrap;
+      padding:.35rem .6rem;border-radius:999px;transition:background-color .15s}
+nav a:hover{color:var(--ink);background:color-mix(in srgb,var(--ink) 8%,transparent)}
+
+section{padding:3.2rem 0;border-top:1px solid var(--line)}
+section:first-of-type{border-top:0}
+.hero{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,.95fr);gap:2.5rem 3rem;align-items:center;
+      padding-top:3rem}
+.hero img.wordmark{width:100%;max-width:440px;height:auto}
+.hero .thesis{font-size:1.18rem;line-height:1.55;margin-top:1.1rem;color:var(--ink)}
+.hero .sub{margin-top:.85rem;color:var(--ink-2)}
+figure{margin:0}
+figure img{width:100%;height:auto;border-radius:12px;border:1px solid var(--line);background:#fff}
+figcaption{margin-top:.6rem;font-size:.84rem;line-height:1.5;color:var(--ink-2)}
+.cta{display:flex;flex-wrap:wrap;gap:.6rem;margin-top:1.5rem}
+.btn{display:inline-flex;align-items:center;gap:.45rem;font-size:.92rem;font-weight:500;
+     text-decoration:none;padding:.5rem .95rem;border-radius:999px;border:1px solid var(--line);
+     background:var(--surface);transition:border-color .15s,color .15s}
+.btn:hover{border-color:var(--navy);color:var(--navy)}
+.btn.primary{background:var(--navy);border-color:var(--navy);color:var(--paper)}
+.btn.primary:hover{color:var(--paper);opacity:.9}
+
+.mods{list-style:none;margin:1.4rem 0 0;padding:0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));
+      gap:1px;background:var(--line);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.mods > li{background:var(--surface);padding:1.3rem 1.3rem 1.45rem;display:flex;flex-direction:column;gap:.5rem;min-width:0}
+.mods h3{display:inline-flex;align-items:center;gap:.5rem}
+.mods h3::before{content:"";flex:none;width:.5rem;height:.5rem;border-radius:50%;background:var(--cc)}
+.mods li:nth-child(1){--cc:var(--c3)} .mods li:nth-child(2){--cc:var(--c1)} .mods li:nth-child(3){--cc:var(--c4)}
+.mods ul{margin:.1rem 0 0;padding-left:1.05rem;font-size:.92rem;color:var(--ink-2);line-height:1.6}
+.mods li li{margin-bottom:.2rem}
+
+.code{position:relative;margin:.9rem 0 0}
+pre{margin:0;background:var(--code-bg);border:1px solid var(--line);border-radius:10px;
+    padding:.95rem 4.3rem .95rem 1.05rem;overflow-x:auto;font-family:var(--mono);font-size:.84rem;line-height:1.65}
+code{font-family:var(--mono);font-size:.9em}
+p code,li code,td code{background:var(--code-bg);padding:.1em .35em;border-radius:4px}
+.copy{position:absolute;top:.5rem;right:.5rem;font:500 .74rem/1 var(--sans);color:var(--ink-2);
+      background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:.35rem .55rem;cursor:pointer}
+.copy:hover{color:var(--navy);border-color:var(--navy)}
+.step{margin-top:1.6rem}
+.step .label{display:block;margin-bottom:.15rem}
+
+table{width:100%;border-collapse:collapse;margin-top:1rem;font-size:.92rem}
+th,td{text-align:left;padding:.5rem .7rem;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-weight:500;color:var(--ink-2);font-size:.8rem;letter-spacing:.04em;text-transform:uppercase}
+td:first-child{white-space:nowrap}
+
+.note{margin-top:1.2rem;padding:.9rem 1.1rem;border-radius:10px;background:var(--tint-3);
+      border:1px solid var(--line);font-size:.93rem;color:var(--ink-2)}
+.cite{margin-top:1rem;padding:1.1rem 1.25rem;border-radius:10px;background:var(--surface);
+      border:1px solid var(--line)}
+.cite .who{font-size:.92rem;color:var(--ink-2)}
+.cite .what{font-weight:500;margin:.15rem 0}
+.refs{list-style:none;margin:1.2rem 0 0;padding:0;font-size:.93rem;color:var(--ink-2);
+      display:grid;gap:.45rem}
+.refs b{color:var(--ink);font-weight:500}
+footer{border-top:1px solid var(--line);padding:2.2rem 0 3rem;font-size:.9rem;color:var(--ink-2)}
+footer .row{display:flex;flex-wrap:wrap;gap:.4rem 1.6rem;margin-top:.5rem}
+
+@media (max-width:860px){
+  .hero{grid-template-columns:1fr;gap:1.8rem}
+  .mods{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+<a class="skip" href="#top">Skip to main content</a>
+
+<header>
+  <div class="wrap nav">
+    <a class="brand" href="https://csb-karacalab.github.io/">
+      <svg class="mark" viewBox="0 0 32 32" aria-hidden="true">
+        <rect x="0" y="2" width="6" height="6" rx="1.1" style="fill:var(--ink)"/>
+        <rect x="8" y="2" width="6" height="6" rx="1.1" style="fill:color-mix(in srgb,var(--ink) 50%,transparent)"/>
+        <rect x="16" y="2" width="6" height="6" rx="1.1" style="fill:var(--c1)"/>
+        <rect x="24" y="2" width="6" height="6" rx="1.1" style="fill:var(--c3)"/>
+        <rect x="8" y="10" width="6" height="6" rx="1.1" style="fill:var(--ink)"/>
+        <rect x="16" y="10" width="6" height="6" rx="1.1" style="fill:var(--c2)"/>
+        <rect x="24" y="10" width="6" height="6" rx="1.1" style="fill:var(--c4)"/>
+        <rect x="16" y="18" width="6" height="6" rx="1.1" style="fill:var(--ink)"/>
+        <rect x="24" y="18" width="6" height="6" rx="1.1" style="fill:color-mix(in srgb,var(--ink) 50%,transparent)"/>
+        <rect x="24" y="26" width="6" height="6" rx="1.1" style="fill:var(--ink)"/>
+      </svg><span>Karaca<span class="lab">Lab</span></span></a>
+    <nav aria-label="Sections"><ul>
+      <li><a href="#what">What it measures</a></li>
+      <li><a href="#install">Install</a></li>
+      <li><a href="#run">Run</a></li>
+      <li><a href="#output">Output</a></li>
+      <li><a href="#cite">Cite</a></li>
+      <li><a href="https://github.com/CSB-KaracaLab/DynaPIN">GitHub</a></li>
+    </ul></nav>
+  </div>
+</header>
+
+<main id="top">
+<div class="wrap">
+
+  <section class="hero">
+    <div>
+      <picture>
+        <source media="(prefers-color-scheme: dark)" srcset="assets/logo-wordmark-dark.png">
+        <img class="wordmark" src="assets/logo-wordmark.png" width="1600" height="629"
+             alt="DynaPIN — dynamic protein interfaces">
+      </picture>
+      <h1 class="thesis">An interface is not a fixed list of contacts. DynaPIN measures what it
+        actually does over a trajectory.</h1>
+      <p class="sub">Give it an MD trajectory or a structure ensemble and it returns a dynamic
+        interface fingerprint: how stable the simulation is, how each residue's exposure, energy
+        and secondary structure evolve, and which non-covalent interactions persist, appear or
+        disappear — as tables and figures, from one command.</p>
+      <div class="cta">
+        <a class="btn primary" href="https://github.com/CSB-KaracaLab/DynaPIN">Repository</a>
+        <a class="btn" href="https://doi.org/10.1016/j.jmb.2026.169942">Paper (JMB 2026)</a>
+        <a class="btn" href="https://doi.org/10.5281/zenodo.20180638">Data on Zenodo</a>
+        <a class="btn" href="https://www.youtube.com/watch?v=kr5_DiYVgQI">BioExcel webinar</a>
+      </div>
+    </div>
+    <figure>
+      <img src="assets/interface-loop.gif" width="420" height="303"
+           alt="A protein dimer over about 1.6 nanoseconds of molecular dynamics. Contacts present
+                in every frame stay blue and olive; contacts that open and close flicker orange.">
+      <figcaption>Twenty frames of a dimer, aligned on the larger chain so the motion is the
+        partner breathing against it. Blue and olive are the residues in contact in all twenty
+        frames; orange are the ten that come and go. That difference is what DynaPIN
+        quantifies.</figcaption>
+    </figure>
+  </section>
+
+  <section id="what">
+    <span class="label">What it measures</span>
+    <h2>Three modules, run together or on their own</h2>
+    <ul class="mods">
+      <li>
+        <h3>Quality control</h3>
+        <p>Is the simulation worth analysing?</p>
+        <ul>
+          <li>RMSD, radius of gyration, RMSF</li>
+          <li>CAPRI interface metrics per frame: iRMSD, lRMSD, DockQ, Fnat, Fnonnat</li>
+        </ul>
+      </li>
+      <li>
+        <h3>Residue based</h3>
+        <p>How each interface residue changes.</p>
+        <ul>
+          <li>Core, rim, support, surface or interior, by Levy's definition</li>
+          <li>SASA and relative SASA, complex and monomers</li>
+          <li>Van der Waals and electrostatic contributions per residue, via FoldX</li>
+          <li>Secondary structure transitions</li>
+        </ul>
+      </li>
+      <li>
+        <h3>Interaction based</h3>
+        <p>The network, frame by frame.</p>
+        <ul>
+          <li>Hydrogen bonds, hydrophobic contacts and salt bridges</li>
+          <li>Each interaction's persistence across the trajectory</li>
+          <li>Pairwise interaction frequency plots</li>
+        </ul>
+      </li>
+    </ul>
+    <p class="note">FoldX is optional and must be obtained separately, as its licence is academic.
+      Without <code>--foldx_path</code> everything else still runs; only the energy module is
+      skipped.</p>
+  </section>
+
+  <section id="install">
+    <span class="label">Install</span>
+    <h2>One conda environment</h2>
+    <p class="sub">Linux or macOS, Python 3.10 or newer. On Windows, use WSL. The environment
+      brings in the C extensions that <code>interfacea</code> needs, so conda is not optional.</p>
+    <div class="step">
+      <span class="label">1 · Clone</span>
+      <div class="code"><pre><code>git clone https://github.com/CSB-KaracaLab/DynaPIN.git
+cd DynaPIN</code></pre></div>
+    </div>
+    <div class="step">
+      <span class="label">2 · Create the environment</span>
+      <div class="code"><pre><code>conda env create -f environment.yml
+conda activate dynapin</code></pre></div>
+    </div>
+  </section>
+
+  <section id="run">
+    <span class="label">Run</span>
+    <h2>From the command line, or as a library</h2>
+    <p class="sub">A single command runs quality control, the residue analysis and the interaction
+      analysis, and draws every plot.</p>
+    <div class="step">
+      <span class="label">A PDB trajectory</span>
+      <div class="code"><pre><code>dynapin --output_dir=TestRun --trajectory_file=sim.pdb --commands=all_analysis,all_plots</code></pre></div>
+    </div>
+    <div class="step">
+      <span class="label">A DCD trajectory with a topology, every tenth frame, with FoldX</span>
+      <div class="code"><pre><code>dynapin --output_dir=TestRun --trajectory_file=sim.dcd --topology_file=top.psf \
+        --stride=10 --foldx_path=/path/to/foldx --commands=all_analysis,all_plots</code></pre></div>
+    </div>
+    <table>
+      <caption class="label" style="text-align:left;padding:1.2rem 0 0">The arguments you will reach for</caption>
+      <thead><tr><th>Argument</th><th>What it does</th></tr></thead>
+      <tbody>
+        <tr><td><code>-t, --trajectory_file</code></td><td>The trajectory: <code>.dcd</code>, <code>.xtc</code>, <code>.trr</code> or <code>.pdb</code>.</td></tr>
+        <tr><td><code>--topology_file</code></td><td>Needed for <code>.dcd</code>. It must carry chain identifiers.</td></tr>
+        <tr><td><code>-c, --commands</code></td><td><code>QualityControl</code>, <code>ResidueBased</code>, <code>InteractionBased</code>, <code>all_analysis</code>, <code>all_plots</code>.</td></tr>
+        <tr><td><code>-s, --stride</code></td><td>Read every n-th frame. The quickest way to make a first pass cheap.</td></tr>
+        <tr><td><code>-ch, --chains</code></td><td>Which two chains to treat as the interface in a heteromer, e.g. <code>'A,B'</code>.</td></tr>
+        <tr><td><code>--threshold</code></td><td>Percentage of frames a residue must be at the interface to count as a dynamic interface residue. Default 50.</td></tr>
+        <tr><td><code>--foldx_path</code></td><td>The FoldX executable. Omit it and the energy module is skipped.</td></tr>
+      </tbody>
+    </table>
+    <p class="note">For interactive work there is a notebook,
+      <a href="https://github.com/CSB-KaracaLab/DynaPIN/blob/main/DynaPIN_API_workflow.ipynb"><code>DynaPIN_API_workflow.ipynb</code></a>,
+      which exposes the same analyses step by step with inline 3D views.</p>
+  </section>
+
+  <section id="output">
+    <span class="label">Output</span>
+    <h2>Tables you can plot yourself, and the plots already drawn</h2>
+    <div class="code"><pre><code>output_dir/
+├── figures/                         # qc_*, res_*, int_pairwise_* plots
+├── tables/
+│   ├── int_pairwise_trajectory.csv  # every atomic interaction, per frame
+│   ├── qc_residue_rmsf.csv          # RMSF per residue
+│   ├── qc_trajectory_metrics.csv    # RMSD, Rg, DockQ over time
+│   ├── res_interface_stats.csv      # interface occupancy, core/rim classification
+│   └── res_trajectory_props.csv     # energy, SASA and secondary structure per residue
+├── models.zip                       # the frames that were analysed
+└── plot_params.json, table_params.json</code></pre></div>
+    <p class="note">The trajectories and the full outputs for the three test cases in the paper —
+      rigid, medium and difficult — are on
+      <a href="https://doi.org/10.5281/zenodo.20180638">Zenodo</a>, so you can reproduce a run
+      before pointing DynaPIN at your own data.</p>
+  </section>
+
+  <section id="cite">
+    <span class="label">Cite</span>
+    <h2>If DynaPIN is in your methods section</h2>
+    <div class="cite">
+      <p class="who">Barlas AB, Özsan A, Prévost C, Sacquin-Mora S, Karaca E (2026)</p>
+      <p class="what">DynaPIN: A Tool for Characterizing Dynamic Protein Interfaces</p>
+      <p class="who"><i>Journal of Molecular Biology</i> 438:169942 ·
+        <a href="https://doi.org/10.1016/j.jmb.2026.169942">doi:10.1016/j.jmb.2026.169942</a></p>
+    </div>
+    <p class="sub" style="margin-top:1.3rem">DynaPIN is a pipeline over other people's work.
+      If you use the module, please cite the tool underneath it:</p>
+    <ul class="refs">
+      <li><b>MDAnalysis</b> — trajectory handling and the structural metrics · <a href="https://doi.org/10.1002/jcc.21787">10.1002/jcc.21787</a></li>
+      <li><b>pdb-tools</b> — preprocessing · <a href="https://doi.org/10.12688/f1000research.17456.1">10.12688/f1000research.17456.1</a></li>
+      <li><b>DockQ</b> — the CAPRI quality metrics · <a href="https://doi.org/10.1371/journal.pone.0161879">10.1371/journal.pone.0161879</a></li>
+      <li><b>FreeSASA</b> and <b>Levy's definition</b> — accessible surface and interface regions · <a href="https://doi.org/10.12688/f1000research.7931.1">10.12688/f1000research.7931.1</a> · <a href="https://doi.org/10.1016/j.jmb.2010.09.028">10.1016/j.jmb.2010.09.028</a></li>
+      <li><b>DSSP</b> — secondary structure · <a href="https://doi.org/10.1002/pro.70208">10.1002/pro.70208</a></li>
+      <li><b>FoldX</b> — the energy decomposition · <a href="https://doi.org/10.1093/nar/gki387">10.1093/nar/gki387</a></li>
+      <li><b>interfacea</b> — the non-covalent interaction profiling · <a href="https://doi.org/10.5281/zenodo.3516439">10.5281/zenodo.3516439</a></li>
+    </ul>
+  </section>
+
+</div>
+</main>
+
+<footer>
+  <div class="wrap">
+    <p>DynaPIN is developed in the
+      <a href="https://csb-karacalab.github.io/">Computational Structural Biology Lab</a>
+      at the Izmir Biomedicine and Genome Center.</p>
+    <p class="row">
+      <span><a href="https://github.com/CSB-KaracaLab/DynaPIN">github.com/CSB-KaracaLab/DynaPIN</a></span>
+      <span><a href="mailto:ezgi.karaca@ibg.edu.tr">ezgi.karaca@ibg.edu.tr</a></span>
+    </p>
+    <p style="margin-top:1rem">Supported by TÜBİTAK under the 2509 Bosphorus Türkiye–France
+      Bilateral Cooperation Program, project 122N790.</p>
+  </div>
+</footer>
+
+<script>
+// Copy buttons, added from script so a reader without JS sees plain code blocks.
+for (const block of document.querySelectorAll(".code")) {
+  const button = document.createElement("button");
+  button.className = "copy";
+  button.type = "button";
+  button.textContent = "copy";
+  button.addEventListener("click", async () => {
+    try {
+      await navigator.clipboard.writeText(block.querySelector("code").innerText);
+      button.textContent = "copied";
+    } catch {
+      button.textContent = "select it";
+    }
+    setTimeout(() => (button.textContent = "copy"), 1600);
+  });
+  block.appendChild(button);
+}
+</script>
+</body>
+</html>
